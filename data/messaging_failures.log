@@ -1,0 +1,13 @@
+2026-04-02 22:37:11,577 - ERROR - direction=crm_to_user task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 8519439890 not found'}
+2026-04-02 22:37:13,518 - ERROR - direction=user_notify_after_crm_fail task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 8519439890 not found'}
+2026-04-02 22:38:22,810 - ERROR - direction=crm_to_user task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 8519439890 not found'}
+2026-04-02 22:38:25,039 - ERROR - direction=user_notify_after_crm_fail task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 8519439890 not found'}
+2026-04-02 22:41:25,032 - ERROR - direction=crm_to_user task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 8423061874 not found'}
+2026-04-02 22:41:26,705 - ERROR - direction=user_notify_after_crm_fail task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 8519439890 not found'}
+2026-04-02 22:52:26,298 - ERROR - direction=crm_to_user task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 113124161 not found'}
+2026-04-02 22:52:28,371 - ERROR - direction=user_notify_after_crm_fail task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 113124161 not found'}
+2026-04-02 22:52:51,456 - ERROR - direction=crm_to_user task_id=346771763 channel=max_messenger | В ответе upload-сервера отсутствует token
+2026-04-02 22:52:53,080 - ERROR - direction=user_notify_after_crm_fail task_id=346771763 channel=max_messenger | Ошибка от API: self.code=404 self.raw={'code': 'chat.not.found', 'message': 'Chat 113124161 not found'}
+2026-04-02 22:59:42,125 - ERROR - direction=crm_to_user task_id=346771763 channel=max_messenger | В ответе upload-сервера отсутствует token
+2026-04-02 23:02:52,105 - ERROR - direction=crm_to_user task_id=346771763 channel=max_messenger | В ответе upload-сервера отсутствует token
+2026-04-02 23:03:22,833 - ERROR - direction=crm_alert_failed task_id=346771763 channel=None | Не удалось отправить plain-комментарий в CRM: 

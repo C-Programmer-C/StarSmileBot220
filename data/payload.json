@@ -1,0 +1,150 @@
+{
+  "event": "comment",
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6ImF0K2p3dCJ9.eyJuYmYiOjE3NzUxNjc3NTIsImV4cCI6MTc3NTE2ODY1MiwiaXNzIjoiaHR0cDovL3B5cnVzLWlkZW50aXR5LXNlcnZlci5weXJ1cy1wcm9kLnN2Yy5jbHVzdGVyLmxvY2FsIiwiYXVkIjoicHVibGljYXBpIiwiY2xpZW50X2lkIjoiMTFGRjI4OTctRDNFMS00QjAwLUJCRjYtNDFCMzhDM0EwMDcyIiwic3ViIjoiMTI5MTE1NiIsImF1dGhfdGltZSI6MTc3NTE2Nzc1MiwiaWRwIjoibG9jYWwiLCJzZWNyZXQiOiIwMzJjMzEwYmI3NWFjYTA2ZTM0OTlmYmZjMGMxNmM5ODViMjAyMDZkNjM1NGU5MDRiOTMxNGFlODdhMzA5ODdlIiwidGltZXN0YW1wIjoiMTc3NTE2ODY1MiIsInNjb3BlIjpbInB1YmxpY2FwaSJdLCJhbXIiOlsicHdkIl19.fypot6uR8mcYOAw-_R31gEjQ2Neb97WAkEqRNgWzrjB1s-0o_U6ltBsR7kR96E4tBIC2KvucMomKvI99xSsCPHVXSI1n-9hNXiJzOxOoUEehISITeOJe9IXVwBg0dRNYI2ELKeqHyiCrIsEajct3D5F3jfB23TcflO5wASQb4kBSvxAnTXMd8YReQ3EwkS3LwdUpPnA5JSLhNmrsHVAxIzzoY1OcwVl6erGdGg9XXeld_BSEkj8OrfcaGb3grJCZh9zS1HeyG-JfOeMBGMP3wpI0hoQsLBwcMrvyP5Mt9M9bPJ9heHTdA5_uB330a9APbfjMx1EWvC49pEfGyVohiQ",
+  "task_id": 346750680,
+  "user_id": 1291156,
+  "task": {
+    "id": 346750680,
+    "text": "Тесты Справочник клиентов: 02.04.2026 19:41",
+    "formatted_text": "Тесты Справочник клиентов: 02.04.2026 19:41",
+    "create_date": "2026-04-02T14:41:01Z",
+    "last_modified_date": "2026-04-02T22:09:11Z",
+    "author": {
+      "id": 1239753,
+      "first_name": "Тимур",
+      "last_name": "Ильясов",
+      "email": "Timurilyasov95@gmail.com",
+      "type": "user",
+      "banned": false
+    },
+    "list_ids": [
+      2394369
+    ],
+    "subscribers": [
+      {
+        "person": {
+          "id": 1291156,
+          "first_name": "Бот для тестов",
+          "last_name": "",
+          "email": "bot@ad61e659-1904-4541-adbc-793923be7f2a",
+          "type": "bot",
+          "banned": false
+        }
+      }
+    ],
+    "form_id": 2394369,
+    "approvals": [
+      [
+        {
+          "person": {
+            "id": 1239753,
+            "first_name": "Тимур",
+            "last_name": "Ильясов",
+            "email": "Timurilyasov95@gmail.com",
+            "type": "user",
+            "banned": false
+          },
+          "approval_choice": "waiting"
+        }
+      ]
+    ],
+    "current_step": 1,
+    "linked_task_ids": [
+      346804269,
+      346804340
+    ],
+    "fields": [
+      {
+        "id": 1,
+        "type": "creation_date",
+        "name": "Дата создания",
+        "tooltip": "",
+        "value": "2026-04-02"
+      },
+      {
+        "id": 2,
+        "type": "text",
+        "name": "ФИО",
+        "tooltip": "",
+        "code": "FIO",
+        "value": "dj"
+      },
+      {
+        "id": 3,
+        "type": "text",
+        "name": "Телефон",
+        "tooltip": "",
+        "code": "TELEPHONE",
+        "value": "123"
+      },
+      {
+        "id": 4,
+        "type": "text",
+        "name": "Телеграмм Аккаунт",
+        "tooltip": "",
+        "code": "TG_ACCOUNT"
+      },
+      {
+        "id": 5,
+        "type": "text",
+        "name": "Телеграмм ID",
+        "tooltip": "",
+        "code": "TG_ID"
+      },
+      {
+        "id": 8,
+        "type": "text",
+        "name": "Макс ID",
+        "tooltip": "",
+        "code": "MAX_ID"
+      },
+      {
+        "id": 6,
+        "type": "note",
+        "name": "Кнопка",
+        "tooltip": "Создать форму \"Внешнее обращение\"",
+        "value": "Создать форму \"Внешнее обращение\""
+      }
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "name": "Этап 1",
+        "elapsed_time": 26890860
+      }
+    ],
+    "comments": [
+      {
+        "id": 2961948136,
+        "create_date": "2026-04-02T22:09:11Z",
+        "author": {
+          "id": 1239753,
+          "first_name": "Тимур",
+          "last_name": "Ильясов",
+          "email": "Timurilyasov95@gmail.com",
+          "type": "user",
+          "banned": false
+        },
+        "approvals_rerequested": [
+          [
+            {
+              "person": {
+                "id": 1239753,
+                "first_name": "Тимур",
+                "last_name": "Ильясов",
+                "email": "Timurilyasov95@gmail.com",
+                "type": "user",
+                "banned": false
+              },
+              "step": 1
+            }
+          ]
+        ],
+        "action": "reopened"
+      }
+    ],
+    "is_closed": false
+  },
+  "api_url": "https://api.pyrus.com/v4/",
+  "files_url": "https://files.pyrus.com/"
+}
