@@ -1037,24 +1037,37 @@ def _extract_max_upload_token(
 
 
 async def _max_buffer_to_attachment(bot: MaxBot, buf: InputMediaBuffer) -> Attachment:
-    """Загрузка файла в MAX и сбор Attachment без бага maxapi: только второй ответ JSON с token."""
-    from maxapi.utils.message import _get_upload_info, _upload_input_media
+    """Загрузка файла в MAX и сбор Attachment.
 
-    upload = await _get_upload_info(bot=bot, upload_type=buf.type)
-    upload_file_response = await _upload_input_media(
-        base_connection=bot,
-        upload_url=upload.url,
-        att=buf,
-    )
-    token = _extract_max_upload_token(
-        upload_file_response,
-        upload.token,
-        buf.type,
-    )
-    au = AttachmentUpload(
-        type=buf.type,
-        payload=AttachmentPayload(token=token),
-    )
+    В старых версиях maxapi — приватные хелперы + свой разбор token; в новых их убрали — ``process_input_media``.
+    """
+    try:
+        from maxapi.utils.message import _get_upload_info, _upload_input_media
+    except ImportError:
+        _get_upload_info = None  # type: ignore[misc, assignment]
+        _upload_input_media = None  # type: ignore[misc, assignment]
+
+    if _get_upload_info is not None and _upload_input_media is not None:
+        upload = await _get_upload_info(bot=bot, upload_type=buf.type)
+        upload_file_response = await _upload_input_media(
+            base_connection=bot,
+            upload_url=upload.url,
+            att=buf,
+        )
+        token = _extract_max_upload_token(
+            upload_file_response,
+            upload.token,
+            buf.type,
+        )
+        au = AttachmentUpload(
+            type=buf.type,
+            payload=AttachmentPayload(token=token),
+        )
+        return Attachment(type=_upload_type_to_attachment_type(buf.type), payload=au)
+
+    from maxapi.utils.message import process_input_media
+
+    au = await process_input_media(base_connection=bot, bot=bot, att=buf)
     return Attachment(type=_upload_type_to_attachment_type(buf.type), payload=au)
 
 
