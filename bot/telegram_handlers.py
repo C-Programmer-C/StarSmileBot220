@@ -116,30 +116,54 @@ async def message_text_handler(message: Message):
 
         user_tasks: list[dict[str, Any]] = []
         appeal_tasks: list[dict[str, Any]] = []
-        try:
-            user_tasks = await fetch_form_register_tasks(
-                settings.CLIENT_FORM_ID,
-                settings.USER_FORM_FIELDS["tg_id"],
-                tg_id,
-            )
-            user = user_tasks[0] if user_tasks else None
+        pending_task_id: int | None = None
 
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 403:
-                logger.warning(f"Access denied for user {tg_id}: {e}")
-                user = None
-            else:
-                logger.error(f"HTTP error for user {tg_id}: {e}")
+        async def _fetch_client_register_tasks() -> list[dict[str, Any]]:
+            try:
+                return await fetch_form_register_tasks(
+                    settings.CLIENT_FORM_ID,
+                    settings.USER_FORM_FIELDS["tg_id"],
+                    tg_id,
+                )
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 403:
+                    return []
+                raise
+
+        ut_res, ap_res, pd_res = await asyncio.gather(
+            _fetch_client_register_tasks(),
+            fetch_form_register_tasks(
+                settings.APPEAL_FORM_ID,
+                settings.REQUEST_FORM_FIELDS["tg_id"],
+                tg_id,
+            ),
+            get_pending_task_id(tg_id),
+            return_exceptions=True,
+        )
+
+        if isinstance(ut_res, BaseException):
+            if isinstance(ut_res, httpx.HTTPStatusError):
+                logger.error(f"HTTP error (client register) for user {tg_id}: {ut_res}")
                 await message.answer(
                     "❌ Ошибка при обработке запроса. Пожалуйста, попробуйте позже."
                 )
-                raise
-        except Exception as e:
-            logger.error(f"Unexpected error for user {tg_id}: {e}")
-            await message.answer(
-                "❌ Ошибка при обработке запроса. Пожалуйста, попробуйте позже."
-            )
-            raise
+                raise ut_res
+            raise ut_res
+        if isinstance(ap_res, BaseException):
+            if isinstance(ap_res, httpx.HTTPStatusError):
+                logger.error(f"HTTP error (appeal register) for user {tg_id}: {ap_res}")
+                await message.answer(
+                    "❌ Ошибка при обработке запроса. Пожалуйста, попробуйте позже."
+                )
+                raise ap_res
+            raise ap_res
+        if isinstance(pd_res, BaseException):
+            raise pd_res
+
+        user_tasks = ut_res
+        appeal_tasks = ap_res
+        pending_task_id = pd_res
+        user = user_tasks[0] if user_tasks else None
 
         user_id = user.get("id") if user else None
 
@@ -176,13 +200,6 @@ async def message_text_handler(message: Message):
             )
             return
 
-        pending_task_id = await get_pending_task_id(tg_id)
-
-        appeal_tasks = await fetch_form_register_tasks(
-            settings.APPEAL_FORM_ID,
-            settings.REQUEST_FORM_FIELDS["tg_id"],
-            tg_id,
-        )
         task = appeal_tasks[0] if appeal_tasks else None
 
         task_id = task.get("id") if task else None

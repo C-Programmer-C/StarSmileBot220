@@ -1,2 +1,5 @@
 2026-04-03 02:44:36,203 - WARNING - max_messenger | user_throttle_wait | file_limit key=max_messenger:113124161 waited_sec=9.94
 2026-04-03 02:44:46,224 - WARNING - max_messenger | user_throttle_wait | file_limit key=max_messenger:113124161 waited_sec=9.97
+2026-04-03 11:16:56,180 - WARNING - max_messenger | user_throttle_wait | file_limit key=max_messenger:113124161 waited_sec=0.79
+2026-04-03 11:17:05,405 - WARNING - max_messenger | user_throttle_wait | file_limit key=max_messenger:113124161 waited_sec=9.15
+2026-04-03 11:40:02,660 - WARNING - telegram | user_throttle_wait | file_limit key=telegram:8519439890 waited_sec=5.59

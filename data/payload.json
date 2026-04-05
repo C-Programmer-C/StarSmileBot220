@@ -1,24 +1,24 @@
 {
   "event": "comment",
-  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6ImF0K2p3dCJ9.eyJuYmYiOjE3NzUxNjc3NTIsImV4cCI6MTc3NTE2ODY1MiwiaXNzIjoiaHR0cDovL3B5cnVzLWlkZW50aXR5LXNlcnZlci5weXJ1cy1wcm9kLnN2Yy5jbHVzdGVyLmxvY2FsIiwiYXVkIjoicHVibGljYXBpIiwiY2xpZW50X2lkIjoiMTFGRjI4OTctRDNFMS00QjAwLUJCRjYtNDFCMzhDM0EwMDcyIiwic3ViIjoiMTI5MTE1NiIsImF1dGhfdGltZSI6MTc3NTE2Nzc1MiwiaWRwIjoibG9jYWwiLCJzZWNyZXQiOiIwMzJjMzEwYmI3NWFjYTA2ZTM0OTlmYmZjMGMxNmM5ODViMjAyMDZkNjM1NGU5MDRiOTMxNGFlODdhMzA5ODdlIiwidGltZXN0YW1wIjoiMTc3NTE2ODY1MiIsInNjb3BlIjpbInB1YmxpY2FwaSJdLCJhbXIiOlsicHdkIl19.fypot6uR8mcYOAw-_R31gEjQ2Neb97WAkEqRNgWzrjB1s-0o_U6ltBsR7kR96E4tBIC2KvucMomKvI99xSsCPHVXSI1n-9hNXiJzOxOoUEehISITeOJe9IXVwBg0dRNYI2ELKeqHyiCrIsEajct3D5F3jfB23TcflO5wASQb4kBSvxAnTXMd8YReQ3EwkS3LwdUpPnA5JSLhNmrsHVAxIzzoY1OcwVl6erGdGg9XXeld_BSEkj8OrfcaGb3grJCZh9zS1HeyG-JfOeMBGMP3wpI0hoQsLBwcMrvyP5Mt9M9bPJ9heHTdA5_uB330a9APbfjMx1EWvC49pEfGyVohiQ",
-  "task_id": 346750680,
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6ImF0K2p3dCJ9.eyJuYmYiOjE3NzUyMDUyNjAsImV4cCI6MTc3NTIwNjE2MCwiaXNzIjoiaHR0cDovL3B5cnVzLWlkZW50aXR5LXNlcnZlci5weXJ1cy1wcm9kLnN2Yy5jbHVzdGVyLmxvY2FsIiwiYXVkIjoicHVibGljYXBpIiwiY2xpZW50X2lkIjoiMTFGRjI4OTctRDNFMS00QjAwLUJCRjYtNDFCMzhDM0EwMDcyIiwic3ViIjoiMTI5MTE1NiIsImF1dGhfdGltZSI6MTc3NTIwNTI2MCwiaWRwIjoibG9jYWwiLCJzZWNyZXQiOiIxN2QxOTU2N2ZjMWIwZWExMzZhODc3NjI2NmNmM2Q1NGMyYTdhMzQ0YTMyMTFlY2ZjNTgwZjNkNGMxZWNlNGE4IiwidGltZXN0YW1wIjoiMTc3NTIwNjE2MCIsInNjb3BlIjpbInB1YmxpY2FwaSJdLCJhbXIiOlsicHdkIl19.R5UqTzXpc8uAe_zMDMCFLXZV5vRYg8_WJi97mr2ogcbIqs3nrWxrb8TefwsOx5D_XgprAx0kH2capQF5tkfpSkbQA0FdHqvLl6ZaU3jhcTERh48R8inc92kOA7yklLKhUB3_ZTK0XNvUJcP635iKAvr1KvwLxjo_SQh4e_RQXe40cmAhEsfuosFvsDMC0beHuwswepekA3akGBFv7y3G9kCETSmEOFqzY8vSpRe77Jg49dKWnx4kMRp633rS07IxVsV1EiNU-rK_jDqCmnEklEDE7cU7SWhz4CibiNL5gP2XsuibSXhz0O-QwgSchlueR88Skb3KbOVjb0H5Cd7hIg",
+  "task_id": 346862721,
   "user_id": 1291156,
   "task": {
-    "id": 346750680,
-    "text": "Тесты Справочник клиентов: 02.04.2026 19:41",
-    "formatted_text": "Тесты Справочник клиентов: 02.04.2026 19:41",
-    "create_date": "2026-04-02T14:41:01Z",
-    "last_modified_date": "2026-04-02T22:09:11Z",
+    "id": 346862721,
+    "text": "Тесты Диалоги с клиентами:",
+    "formatted_text": "Тесты Диалоги с клиентами:",
+    "create_date": "2026-04-03T08:34:02Z",
+    "last_modified_date": "2026-04-03T08:34:20Z",
     "author": {
-      "id": 1239753,
-      "first_name": "Тимур",
-      "last_name": "Ильясов",
-      "email": "Timurilyasov95@gmail.com",
-      "type": "user",
+      "id": 1291156,
+      "first_name": "Бот для тестов",
+      "last_name": "",
+      "email": "bot@ad61e659-1904-4541-adbc-793923be7f2a",
+      "type": "bot",
       "banned": false
     },
     "list_ids": [
-      2394369
+      2394367
     ],
     "subscribers": [
       {
@@ -32,8 +32,23 @@
         }
       }
     ],
-    "form_id": 2394369,
+    "form_id": 2394367,
     "approvals": [
+      [],
+      [],
+      [
+        {
+          "person": {
+            "id": 1239753,
+            "first_name": "Тимур",
+            "last_name": "Ильясов",
+            "email": "Timurilyasov95@gmail.com",
+            "type": "user",
+            "banned": false
+          },
+          "approval_choice": "approved"
+        }
+      ],
       [
         {
           "person": {
@@ -48,75 +63,225 @@
         }
       ]
     ],
-    "current_step": 1,
-    "linked_task_ids": [
-      346804269,
-      346804340
-    ],
+    "current_step": 4,
     "fields": [
       {
         "id": 1,
-        "type": "creation_date",
-        "name": "Дата создания",
+        "type": "author",
+        "name": "Автор",
         "tooltip": "",
-        "value": "2026-04-02"
+        "value": {
+          "id": 1291156,
+          "first_name": "Бот для тестов",
+          "last_name": "",
+          "email": "bot@ad61e659-1904-4541-adbc-793923be7f2a",
+          "type": "bot",
+          "banned": false
+        }
       },
       {
         "id": 2,
-        "type": "text",
-        "name": "ФИО",
+        "type": "creation_date",
+        "name": "Дата создания",
         "tooltip": "",
-        "code": "FIO",
-        "value": "dj"
+        "value": "2026-04-03"
       },
       {
         "id": 3,
-        "type": "text",
-        "name": "Телефон",
+        "type": "step",
+        "name": "Этап",
         "tooltip": "",
-        "code": "TELEPHONE",
-        "value": "123"
+        "value": 4
       },
       {
         "id": 4,
         "type": "text",
-        "name": "Телеграмм Аккаунт",
+        "name": "ФИО",
         "tooltip": "",
-        "code": "TG_ACCOUNT"
+        "code": "SenderName",
+        "value": "gggh"
       },
       {
         "id": 5,
         "type": "text",
-        "name": "Телеграмм ID",
+        "name": "Телефон",
         "tooltip": "",
-        "code": "TG_ID"
+        "value": "45566"
+      },
+      {
+        "id": 6,
+        "type": "text",
+        "name": "Телеграмм Аккаунт",
+        "tooltip": ""
+      },
+      {
+        "id": 7,
+        "type": "text",
+        "name": "Телеграмм ID",
+        "tooltip": ""
+      },
+      {
+        "id": 25,
+        "type": "text",
+        "name": "Макс ID",
+        "tooltip": "",
+        "code": "UserId",
+        "value": "113124161"
       },
       {
         "id": 8,
         "type": "text",
-        "name": "Макс ID",
+        "name": "Тема",
         "tooltip": "",
-        "code": "MAX_ID"
+        "code": "Subject"
       },
       {
-        "id": 6,
-        "type": "note",
-        "name": "Кнопка",
-        "tooltip": "Создать форму \"Внешнее обращение\"",
-        "value": "Создать форму \"Внешнее обращение\""
+        "id": 9,
+        "type": "email",
+        "name": "Эл. почта",
+        "tooltip": "",
+        "code": "Sender_Address"
+      },
+      {
+        "id": 10,
+        "type": "text",
+        "name": "Описание",
+        "tooltip": "",
+        "code": "Description"
+      },
+      {
+        "id": 11,
+        "type": "file",
+        "name": "Файлы",
+        "tooltip": "",
+        "code": "Attachments"
+      },
+      {
+        "id": 12,
+        "type": "title",
+        "name": "Распределение заявки",
+        "tooltip": "",
+        "value": {
+          "checkmark": "unchecked",
+          "fields": [
+            {
+              "id": 13,
+              "type": "catalog",
+              "name": "Регион",
+              "tooltip": "",
+              "parent_id": 12
+            },
+            {
+              "id": 14,
+              "type": "checkmark",
+              "name": "Менеджер КС",
+              "tooltip": "",
+              "default_value": "True",
+              "parent_id": 12,
+              "value": "unchecked"
+            },
+            {
+              "id": 15,
+              "type": "checkmark",
+              "name": "Клиническая поддержка",
+              "tooltip": "",
+              "parent_id": 12,
+              "value": "unchecked"
+            },
+            {
+              "id": 16,
+              "type": "checkmark",
+              "name": "Физическое производство",
+              "tooltip": "",
+              "parent_id": 12,
+              "value": "unchecked"
+            },
+            {
+              "id": 17,
+              "type": "checkmark",
+              "name": "Технологи",
+              "tooltip": "",
+              "parent_id": 12,
+              "value": "unchecked"
+            },
+            {
+              "id": 18,
+              "type": "checkmark",
+              "name": "Отдел качества",
+              "tooltip": "",
+              "parent_id": 12,
+              "value": "unchecked"
+            },
+            {
+              "id": 19,
+              "type": "checkmark",
+              "name": "Логистика",
+              "tooltip": "",
+              "parent_id": 12,
+              "value": "unchecked"
+            },
+            {
+              "id": 20,
+              "type": "checkmark",
+              "name": "IT",
+              "tooltip": "",
+              "parent_id": 12,
+              "value": "unchecked"
+            },
+            {
+              "id": 21,
+              "type": "checkmark",
+              "name": "Юрист",
+              "tooltip": "",
+              "parent_id": 12,
+              "value": "unchecked"
+            }
+          ]
+        }
+      },
+      {
+        "id": 23,
+        "type": "multiple_choice",
+        "name": "Статус",
+        "tooltip": "",
+        "default_value": "2",
+        "code": "Status",
+        "value": {
+          "choice_id": 2,
+          "choice_ids": [
+            2
+          ],
+          "choice_names": [
+            "В работе"
+          ]
+        }
+      },
+      {
+        "id": 24,
+        "type": "checkmark",
+        "name": "Вы точно хотите завершить заявку?",
+        "tooltip": "",
+        "value": "unchecked"
       }
     ],
     "steps": [
       {
-        "step": 1,
-        "name": "Этап 1",
-        "elapsed_time": 26890860
+        "step": 3,
+        "name": "Получение заявки в очереди",
+        "elapsed_time": 9860
+      },
+      {
+        "step": 4,
+        "name": "Распределение заявки от клиента",
+        "elapsed_time": 8180
       }
     ],
     "comments": [
       {
-        "id": 2961948136,
-        "create_date": "2026-04-02T22:09:11Z",
+        "id": 2962454414,
+        "text": "gjvffyg9iouolkm",
+        "formatted_text": "gjvffyg9iouolkm",
+        "create_date": "2026-04-03T08:34:20Z",
         "author": {
           "id": 1239753,
           "first_name": "Тимур",
@@ -125,22 +290,9 @@
           "type": "user",
           "banned": false
         },
-        "approvals_rerequested": [
-          [
-            {
-              "person": {
-                "id": 1239753,
-                "first_name": "Тимур",
-                "last_name": "Ильясов",
-                "email": "Timurilyasov95@gmail.com",
-                "type": "user",
-                "banned": false
-              },
-              "step": 1
-            }
-          ]
-        ],
-        "action": "reopened"
+        "channel": {
+          "type": "max_messenger"
+        }
       }
     ],
     "is_closed": false

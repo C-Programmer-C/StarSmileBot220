@@ -15,7 +15,11 @@ from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
 from config import settings
 from max_rate_limiter import max_rate_limiter
-from resource_limits import acquire_user_file_slot, acquire_user_message_slot
+from resource_limits import (
+    acquire_user_file_slot,
+    acquire_user_message_slot,
+    get_download_semaphore,
+)
 from utils import (
     build_payload,
     check_api_element,
@@ -237,53 +241,75 @@ async def _download_max_attachment_to_bytes(
         return None, None
 
 
+async def _process_one_max_attachment_to_pyrus(
+    client: httpx.AsyncClient,
+    attachment: Any,
+    *,
+    headers: dict[str, str],
+) -> list[str]:
+    url, filename = _extract_attachment_url_and_name(attachment)
+    token = getattr(getattr(attachment, "payload", None), "token", None) or getattr(
+        attachment, "token", None
+    )
+    if not url and not token:
+        logger.warning("MAX attachment without url/token: %s", filename)
+        return []
+    candidate_urls: list[str] = []
+    if url:
+        candidate_urls.append(url)
+    if token:
+        candidate_urls.append(f"https://platform-api.max.ru/files/{token}")
+        candidate_urls.append(f"https://platform-api.max.ru/files/{token}?download=true")
+        candidate_urls.append(f"https://platform-api.max.ru/uploads/{token}")
+    data: bytes | None = None
+    content_type: str | None = None
+    for u in candidate_urls:
+        data, content_type = await _download_max_attachment_to_bytes(client, u, headers=headers)
+        if data:
+            break
+    if not data:
+        logger.warning("No bytes for MAX attachment %s", filename)
+        return []
+    upload_name = _finalize_filename_for_pyrus(filename, data, content_type)
+    if upload_name != filename:
+        logger.debug(
+            "MAX→Pyrus: имя файла %r → %r (Content-Type=%r)",
+            filename,
+            upload_name,
+            content_type,
+        )
+    bio = io.BytesIO(data)
+    guid = await get_unique_file_id(bio, upload_name)
+    if guid:
+        return [guid]
+    logger.warning("Pyrus upload returned no guid for %s", filename)
+    return []
+
+
 async def _download_and_upload_attachments_to_pyrus(attachments: list[Any]) -> list[str]:
-    uploaded_guids: list[str] = []
+    if not attachments:
+        return []
     max_token = settings.MAX_BOT_TOKEN or settings.BOT_TOKEN
     headers = {"Authorization": f"Bearer {max_token}"}
+    sem = get_download_semaphore()
+
     async with httpx.AsyncClient() as client:
-        for attachment in attachments:
-            url, filename = _extract_attachment_url_and_name(attachment)
-            token = getattr(getattr(attachment, "payload", None), "token", None) or getattr(
-                attachment, "token", None
-            )
-            if not url and not token:
-                logger.warning("MAX attachment without url/token: %s", filename)
-                continue
-            candidate_urls: list[str] = []
-            if url:
-                candidate_urls.append(url)
-            if token:
-                candidate_urls.append(f"https://platform-api.max.ru/files/{token}")
-                candidate_urls.append(
-                    f"https://platform-api.max.ru/files/{token}?download=true"
-                )
-                candidate_urls.append(f"https://platform-api.max.ru/uploads/{token}")
-            data: bytes | None = None
-            content_type: str | None = None
-            for u in candidate_urls:
-                data, content_type = await _download_max_attachment_to_bytes(
-                    client, u, headers=headers
-                )
-                if data:
-                    break
-            if not data:
-                logger.warning("No bytes for MAX attachment %s", filename)
-                continue
-            upload_name = _finalize_filename_for_pyrus(filename, data, content_type)
-            if upload_name != filename:
-                logger.debug(
-                    "MAX→Pyrus: имя файла %r → %r (Content-Type=%r)",
-                    filename,
-                    upload_name,
-                    content_type,
-                )
-            bio = io.BytesIO(data)
-            guid = await get_unique_file_id(bio, upload_name)
-            if guid:
-                uploaded_guids.append(guid)
-            else:
-                logger.warning("Pyrus upload returned no guid for %s", filename)
+
+        async def one(att: Any) -> list[str]:
+            async with sem:
+                return await _process_one_max_attachment_to_pyrus(client, att, headers=headers)
+
+        results = await asyncio.gather(
+            *[one(a) for a in attachments],
+            return_exceptions=True,
+        )
+
+    uploaded_guids: list[str] = []
+    for r in results:
+        if isinstance(r, BaseException):
+            logger.warning("MAX attachment pipeline failed: %s", r)
+            continue
+        uploaded_guids.extend(r)
     return uploaded_guids
 
 
@@ -489,20 +515,39 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
             for _ in range(len(attachments or [])):
                 await acquire_user_file_slot("max_messenger", user_id)
 
-            user_tasks: list[dict[str, Any]] = []
-            try:
-                user_tasks = await fetch_form_register_tasks(
-                    settings.CLIENT_FORM_ID, client_user_field, user_id
-                )
-                user = user_tasks[0] if user_tasks else None
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 403:
-                    user = None
-                else:
-                    logger.error("HTTP error for user %s: %s", user_id, e)
+            async def _fetch_client_register_tasks() -> list[dict[str, Any]]:
+                try:
+                    return await fetch_form_register_tasks(
+                        settings.CLIENT_FORM_ID, client_user_field, user_id
+                    )
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 403:
+                        return []
+                    raise
+
+            ut_res, ap_res = await asyncio.gather(
+                _fetch_client_register_tasks(),
+                fetch_form_register_tasks(
+                    settings.APPEAL_FORM_ID, appeal_user_field, user_id
+                ),
+                return_exceptions=True,
+            )
+            if isinstance(ut_res, BaseException):
+                if isinstance(ut_res, httpx.HTTPStatusError):
+                    logger.error("HTTP error (client register) for user %s: %s", user_id, ut_res)
                     await event.message.answer("❌ Ошибка при обработке запроса. Попробуйте позже.")
                     return
+                raise ut_res
+            if isinstance(ap_res, BaseException):
+                if isinstance(ap_res, httpx.HTTPStatusError):
+                    logger.error("HTTP error (appeal register) for user %s: %s", user_id, ap_res)
+                    await event.message.answer("❌ Ошибка при обработке запроса. Попробуйте позже.")
+                    return
+                raise ap_res
 
+            user_tasks: list[dict[str, Any]] = ut_res
+            appeal_tasks: list[dict[str, Any]] = ap_res
+            user = user_tasks[0] if user_tasks else None
             pyrus_user_id = user.get("id") if user else None
             if not pyrus_user_id:
                 await event.message.answer(
@@ -526,9 +571,6 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
             fullname = fields_dict.get(settings.USER_FORM_FIELDS["fullname"], "Пользователь")
             telephone = fields_dict.get(settings.USER_FORM_FIELDS["telephone"], "Не указан")
 
-            appeal_tasks = await fetch_form_register_tasks(
-                settings.APPEAL_FORM_ID, appeal_user_field, user_id
-            )
             existing_task = appeal_tasks[0] if appeal_tasks else None
             task_id = existing_task.get("id") if existing_task else None
 
