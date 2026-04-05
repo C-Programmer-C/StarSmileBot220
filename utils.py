@@ -9,10 +9,8 @@ from aiogram import Bot
 from aiogram.types import BufferedInputFile, InputMediaDocument
 from maxapi import Bot as MaxBot
 from maxapi.enums.attachment import AttachmentType
-from maxapi.exceptions.max import MaxUploadFileFailed
 from maxapi.enums.upload_type import UploadType
 from maxapi.types.attachments.attachment import Attachment
-from maxapi.types.attachments.upload import AttachmentPayload, AttachmentUpload
 from maxapi.types.input_media import InputMediaBuffer
 
 from config import settings
@@ -986,85 +984,7 @@ def _max_guess_upload_type(filename: str) -> UploadType:
     return UploadType.FILE
 
 
-def _extract_max_upload_token(
-    response_text: str,
-    token_from_post_uploads: Optional[str],
-    upload_type: UploadType,
-) -> str:
-    """Токен после POST на upload URL; если нет — из ответа POST /uploads (как у video/audio в maxapi)."""
-    if upload_type in (UploadType.VIDEO, UploadType.AUDIO) and token_from_post_uploads:
-        return token_from_post_uploads
-
-    raw = (response_text or "").strip()
-    if raw:
-        try:
-            j = json.loads(raw)
-        except json.JSONDecodeError:
-            j = None
-        if isinstance(j, dict):
-            t = j.get("token")
-            if isinstance(t, str) and t:
-                return t
-            for key in ("access_token", "file_token"):
-                v = j.get(key)
-                if isinstance(v, str) and v:
-                    return v
-            pl = j.get("payload")
-            if isinstance(pl, dict):
-                for key in ("token", "file_token"):
-                    v = pl.get(key)
-                    if isinstance(v, str) and v:
-                        return v
-            if upload_type == UploadType.IMAGE:
-                photos = j.get("photos")
-                if isinstance(photos, dict) and photos:
-                    first = next(iter(photos.values()))
-                    if isinstance(first, dict):
-                        tok = first.get("token")
-                        if isinstance(tok, str) and tok:
-                            return tok
-
-    if token_from_post_uploads:
-        logger.info(
-            "MAX upload: используем token из ответа POST /uploads (в ответе после загрузки файла нет token)"
-        )
-        return token_from_post_uploads
-
-    raise MaxUploadFileFailed(
-        "В ответе upload-сервера отсутствует token; в POST /uploads token тоже пуст. "
-        f"Ответ[:500]={raw[:500]!r}"
-    )
-
-
 async def _max_buffer_to_attachment(bot: MaxBot, buf: InputMediaBuffer) -> Attachment:
-    """Загрузка файла в MAX и сбор Attachment.
-
-    В старых версиях maxapi — приватные хелперы + свой разбор token; в новых их убрали — ``process_input_media``.
-    """
-    try:
-        from maxapi.utils.message import _get_upload_info, _upload_input_media
-    except ImportError:
-        _get_upload_info = None  # type: ignore[misc, assignment]
-        _upload_input_media = None  # type: ignore[misc, assignment]
-
-    if _get_upload_info is not None and _upload_input_media is not None:
-        upload = await _get_upload_info(bot=bot, upload_type=buf.type)
-        upload_file_response = await _upload_input_media(
-            base_connection=bot,
-            upload_url=upload.url,
-            att=buf,
-        )
-        token = _extract_max_upload_token(
-            upload_file_response,
-            upload.token,
-            buf.type,
-        )
-        au = AttachmentUpload(
-            type=buf.type,
-            payload=AttachmentPayload(token=token),
-        )
-        return Attachment(type=_upload_type_to_attachment_type(buf.type), payload=au)
-
     from maxapi.utils.message import process_input_media
 
     au = await process_input_media(base_connection=bot, bot=bot, att=buf)
