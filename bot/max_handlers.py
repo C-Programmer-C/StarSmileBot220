@@ -23,6 +23,7 @@ from resource_limits import (
 from utils import (
     build_payload,
     check_api_element,
+    client_telephone_from_fields,
     create_appeal_task,
     create_user_task,
     ensure_max_id_on_client_task,
@@ -37,6 +38,7 @@ from utils import (
     prepare_fields_to_dict,
     record_messaging_failure,
     send_comment_in_pyrus,
+    sync_appeal_max_id_for_max_phone_login,
     warn_if_multiple_tasks_on_register,
 )
 
@@ -388,7 +390,42 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
                 card_fields = prepare_fields_to_dict(client.get("fields") or [])
                 if cid is not None:
                     await ensure_max_id_on_client_task(int(cid), user_id, card_fields)
-                await event.message.answer(_MAX_AUTH_SUCCESS)
+
+                tel_for_search = client_telephone_from_fields(card_fields)
+                appeal_phone_fid = settings.REQUEST_FORM_FIELDS["telephone"]
+                appeals = await find_client_tasks_by_phone(
+                    settings.APPEAL_FORM_ID,
+                    appeal_phone_fid,
+                    tel_for_search,
+                    phone,
+                )
+                extra_msg = ""
+                if appeals:
+                    await warn_if_multiple_tasks_on_register(
+                        settings.APPEAL_FORM_ID,
+                        appeal_phone_fid,
+                        tel_for_search or phone,
+                        kind="телефон (MAX, обращение при входе)",
+                        tasks=appeals,
+                    )
+                    extra_msg = await sync_appeal_max_id_for_max_phone_login(
+                        appeals[0],
+                        user_id,
+                        card_fields,
+                        phone_label=tel_for_search or phone,
+                    )
+                else:
+                    logger.info(
+                        "MAX phone login: no appeal for client_id=%s phone=%r",
+                        cid,
+                        tel_for_search or phone,
+                    )
+                    extra_msg = (
+                        "\n\nℹ️ Обращение с этим телефоном не найдено — "
+                        "обновлена только карточка клиента."
+                    )
+
+                await event.message.answer(_MAX_AUTH_SUCCESS + extra_msg)
                 await context.clear()
                 return
 

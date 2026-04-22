@@ -639,6 +639,108 @@ async def ensure_max_id_on_client_task(
     )
 
 
+def client_telephone_from_fields(card_fields: dict[int, Any]) -> str:
+    v = _pyrus_field_scalar(
+        card_fields.get(settings.USER_FORM_FIELDS["telephone"])
+    )
+    return (v or "").strip()
+
+
+def _appeal_max_id_is_set(appeal_fields: dict[int, Any]) -> bool:
+    max_fid = settings.REQUEST_FORM_FIELDS["max_id"]
+    s = _pyrus_field_scalar(appeal_fields.get(max_fid))
+    if not s:
+        return False
+    return s not in ("0", "Не указан", "None", "-")
+
+
+async def sync_appeal_max_id_for_max_phone_login(
+    appeal_task: dict[str, Any],
+    max_user_id: int,
+    client_card_fields: dict[int, Any],
+    *,
+    phone_label: str,
+) -> str:
+    """
+    В задаче обращения (диалог) выставить/обновить поле max_id (REQUEST_FORM_FIELDS).
+    Если max_id был пуст — сначала field_updates, затем open_chat; если был — только смена значения, затем open_chat.
+    Возвращает доп. текст для ответа пользователю в MAX.
+    """
+    raw_id = appeal_task.get("id")
+    if raw_id is None:
+        logger.warning("sync_appeal_max_id_for_max_phone_login: task without id")
+        return ""
+    task_id = int(raw_id)
+    appeal_fields = prepare_fields_to_dict(appeal_task.get("fields") or [])
+    max_fid = settings.REQUEST_FORM_FIELDS["max_id"]
+    cur_s = _pyrus_field_scalar(appeal_fields.get(max_fid))
+    has = _appeal_max_id_is_set(appeal_fields)
+
+    if has and str(cur_s).strip() == str(max_user_id):
+        logger.info(
+            "MAX phone login: appeal task %s already has max_id=%s, open_chats",
+            task_id,
+            max_user_id,
+        )
+        await open_chats_after_appeal(
+            task_id,
+            source_channel="max_messenger",
+            fields_dict=client_card_fields,
+        )
+        return (
+            "\n\nДиалог в CRM найден, MAX в обращении уже был привязан к этому id."
+        )
+
+    if has:
+        crm_text = (
+            f"[Бот MAX] Обновлён MAX id в обращении (тел. {phone_label}): "
+            f"было {cur_s}, стало {max_user_id}."
+        )
+        await api_request(
+            "POST",
+            f"/tasks/{task_id}/comments",
+            json_data={
+                "text": crm_text,
+                "field_updates": [{"id": max_fid, "value": max_user_id}],
+            },
+        )
+        logger.info(
+            "MAX phone login: appeal task %s max_id %s -> %s",
+            task_id,
+            cur_s,
+            max_user_id,
+        )
+        await open_chats_after_appeal(
+            task_id,
+            source_channel="max_messenger",
+            fields_dict=client_card_fields,
+        )
+        return f"\n\nДиалог в CRM найден. MAX в обращении обновлён: {cur_s} → {max_user_id}."
+
+    crm_text = (
+        f"[Бот MAX] Привязан MAX id к обращению (тел. {phone_label}), поле max_id заполнено."
+    )
+    await api_request(
+        "POST",
+        f"/tasks/{task_id}/comments",
+        json_data={
+            "text": crm_text,
+            "field_updates": [{"id": max_fid, "value": max_user_id}],
+        },
+    )
+    logger.info(
+        "MAX phone login: appeal task %s max_id set to %s, then open_chats",
+        task_id,
+        max_user_id,
+    )
+    await open_chats_after_appeal(
+        task_id,
+        source_channel="max_messenger",
+        fields_dict=client_card_fields,
+    )
+    return "\n\nДиалог в CRM найден, MAX привязан к обращению, чат открыт."
+
+
 _dup_warn_last: dict[str, float] = {}
 DUP_WARN_TTL_SEC = 3600.0
 
@@ -1057,6 +1159,7 @@ async def send_message_to_max_chat(
             )
             for one in attachments_ready:
                 await max_rate_limiter.acquire()
+                await asyncio.sleep(bot.after_input_media_delay)
                 await bot.send_message(
                     user_id=chat_id,
                     text=None,
@@ -1070,6 +1173,7 @@ async def send_message_to_max_chat(
             )
         else:
             await max_rate_limiter.acquire()
+            await asyncio.sleep(bot.after_input_media_delay)
             await bot.send_message(
                 user_id=chat_id,
                 text=None,
