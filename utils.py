@@ -660,16 +660,15 @@ async def sync_appeal_max_id_for_max_phone_login(
     client_card_fields: dict[int, Any],
     *,
     phone_label: str,
-) -> str:
+) -> None:
     """
     В задаче обращения (диалог) выставить/обновить поле max_id (REQUEST_FORM_FIELDS).
     Если max_id был пуст — сначала field_updates, затем open_chat; если был — только смена значения, затем open_chat.
-    Возвращает доп. текст для ответа пользователю в MAX.
     """
     raw_id = appeal_task.get("id")
     if raw_id is None:
         logger.warning("sync_appeal_max_id_for_max_phone_login: task without id")
-        return ""
+        return
     task_id = int(raw_id)
     appeal_fields = prepare_fields_to_dict(appeal_task.get("fields") or [])
     max_fid = settings.REQUEST_FORM_FIELDS["max_id"]
@@ -687,9 +686,7 @@ async def sync_appeal_max_id_for_max_phone_login(
             source_channel="max_messenger",
             fields_dict=client_card_fields,
         )
-        return (
-            "\n\nДиалог в CRM найден, MAX в обращении уже был привязан к этому id."
-        )
+        return
 
     if has:
         crm_text = (
@@ -715,7 +712,7 @@ async def sync_appeal_max_id_for_max_phone_login(
             source_channel="max_messenger",
             fields_dict=client_card_fields,
         )
-        return f"\n\nДиалог в CRM найден. MAX в обращении обновлён: {cur_s} → {max_user_id}."
+        return
 
     crm_text = (
         f"[Бот MAX] Привязан MAX id к обращению (тел. {phone_label}), поле max_id заполнено."
@@ -738,7 +735,6 @@ async def sync_appeal_max_id_for_max_phone_login(
         source_channel="max_messenger",
         fields_dict=client_card_fields,
     )
-    return "\n\nДиалог в CRM найден, MAX привязан к обращению, чат открыт."
 
 
 _dup_warn_last: dict[str, float] = {}

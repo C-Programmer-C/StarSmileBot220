@@ -399,7 +399,6 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
                     tel_for_search,
                     phone,
                 )
-                extra_msg = ""
                 if appeals:
                     await warn_if_multiple_tasks_on_register(
                         settings.APPEAL_FORM_ID,
@@ -408,7 +407,7 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
                         kind="телефон (MAX, обращение при входе)",
                         tasks=appeals,
                     )
-                    extra_msg = await sync_appeal_max_id_for_max_phone_login(
+                    await sync_appeal_max_id_for_max_phone_login(
                         appeals[0],
                         user_id,
                         card_fields,
@@ -420,12 +419,8 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
                         cid,
                         tel_for_search or phone,
                     )
-                    extra_msg = (
-                        "\n\nℹ️ Обращение с этим телефоном не найдено — "
-                        "обновлена только карточка клиента."
-                    )
 
-                await event.message.answer(_MAX_AUTH_SUCCESS + extra_msg)
+                await event.message.answer(_MAX_AUTH_SUCCESS)
                 await context.clear()
                 return
 
