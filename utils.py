@@ -661,26 +661,38 @@ async def ensure_tg_id_on_client_task(
     task_id: int,
     tg_id: int,
     fields_dict: dict[int, Any],
+    *,
+    tg_account: str | None = None,
 ) -> None:
-    fid = settings.USER_FORM_FIELDS["tg_id"]
-    cur = _pyrus_field_scalar(fields_dict.get(fid))
-    if cur is not None and str(cur).strip() == str(tg_id):
+    tg_fid = settings.USER_FORM_FIELDS["tg_id"]
+    tg_cur = _pyrus_field_scalar(fields_dict.get(tg_fid))
+    acc_fid = settings.USER_FORM_FIELDS["tg_account"]
+    acc_cur = _pyrus_field_scalar(fields_dict.get(acc_fid))
+    acc_new = (tg_account or "").strip()
+
+    updates: list[dict[str, Any]] = []
+    if tg_cur is None or str(tg_cur).strip() != str(tg_id):
+        updates.append({"id": tg_fid, "value": tg_id})
+    if acc_new and acc_cur != acc_new:
+        updates.append({"id": acc_fid, "value": acc_new})
+
+    if not updates:
         return
-    text = "Привязка Telegram к карточке клиента (бот)."
-    if cur is not None and str(cur).strip() and str(cur).strip() != str(tg_id):
+    text = "Привязка Telegram к карточке клиента (бот). Обновлены tg_id/tg_account."
+    if tg_cur is not None and str(tg_cur).strip() and str(tg_cur).strip() != str(tg_id):
         logger.warning(
             "ensure_tg_id_on_client_task: task %s tg_id %r -> %s",
             task_id,
-            cur,
+            tg_cur,
             tg_id,
         )
-        text = f"Обновлён tg_id при входе по телефону (было {cur}, стало {tg_id})."
+        text = f"Обновлён tg_id при входе по телефону (было {tg_cur}, стало {tg_id})."
     await api_request(
         "POST",
         f"/tasks/{task_id}/comments",
         json_data={
             "text": text,
-            "field_updates": [{"id": fid, "value": tg_id}],
+            "field_updates": updates,
         },
     )
 
@@ -691,31 +703,42 @@ async def ensure_tg_id_on_appeal_task(
     appeal_fields: dict[int, Any],
     *,
     phone_label: str,
+    tg_account: str | None = None,
 ) -> None:
-    fid = settings.REQUEST_FORM_FIELDS["tg_id"]
-    cur = _pyrus_field_scalar(appeal_fields.get(fid))
-    if cur is not None and str(cur).strip() == str(tg_id):
+    tg_fid = settings.REQUEST_FORM_FIELDS["tg_id"]
+    tg_cur = _pyrus_field_scalar(appeal_fields.get(tg_fid))
+    acc_fid = settings.REQUEST_FORM_FIELDS["tg_account"]
+    acc_cur = _pyrus_field_scalar(appeal_fields.get(acc_fid))
+    acc_new = (tg_account or "").strip()
+
+    updates: list[dict[str, Any]] = []
+    if tg_cur is None or str(tg_cur).strip() != str(tg_id):
+        updates.append({"id": tg_fid, "value": tg_id})
+    if acc_new and acc_cur != acc_new:
+        updates.append({"id": acc_fid, "value": acc_new})
+
+    if not updates:
         return
     text = (
-        f"[Бот Telegram] Привязан tg_id к обращению (тел. {phone_label}), поле tg_id заполнено."
+        f"[Бот Telegram] Привязаны tg_id/tg_account к обращению (тел. {phone_label})."
     )
-    if cur is not None and str(cur).strip() and str(cur).strip() != str(tg_id):
+    if tg_cur is not None and str(tg_cur).strip() and str(tg_cur).strip() != str(tg_id):
         logger.warning(
             "ensure_tg_id_on_appeal_task: task %s tg_id %r -> %s",
             task_id,
-            cur,
+            tg_cur,
             tg_id,
         )
         text = (
             f"[Бот Telegram] Обновлён tg_id в обращении (тел. {phone_label}): "
-            f"было {cur}, стало {tg_id}."
+            f"было {tg_cur}, стало {tg_id}."
         )
     await api_request(
         "POST",
         f"/tasks/{task_id}/comments",
         json_data={
             "text": text,
-            "field_updates": [{"id": fid, "value": tg_id}],
+            "field_updates": updates,
         },
     )
 

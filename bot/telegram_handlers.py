@@ -401,6 +401,7 @@ async def input_telephone_handler(message: Message, state: FSMContext):
         return
     telephone = message.text.strip()
     tg_id = message.from_user.id
+    tg_account = (message.from_user.username or "").strip() or "Не указан"
     normalized_phone = normalize_phone_for_lookup(telephone)
     if not normalized_phone:
         await message.answer("❌ Похоже, это не номер телефона. Введите номер еще раз.")
@@ -434,7 +435,12 @@ async def input_telephone_handler(message: Message, state: FSMContext):
                 tasks=matches,
             )
             if client_id is not None:
-                await ensure_tg_id_on_client_task(int(client_id), tg_id, fields_dict)
+                await ensure_tg_id_on_client_task(
+                    int(client_id),
+                    tg_id,
+                    fields_dict,
+                    tg_account=tg_account,
+                )
 
             existing_task = await check_api_element(
                 tg_id,
@@ -474,6 +480,7 @@ async def input_telephone_handler(message: Message, state: FSMContext):
                             tg_id,
                             appeal_fields,
                             phone_label=search_phone,
+                            tg_account=tg_account,
                         )
 
             if task_id:
@@ -486,9 +493,48 @@ async def input_telephone_handler(message: Message, state: FSMContext):
                 await state.clear()
                 return
 
-            await message.answer(
-                "❌ Не нашли ваше обращение. Напишите, пожалуйста, в поддержку."
+            fullname = fields_dict.get(
+                settings.USER_FORM_FIELDS["fullname"],
+                "Пользователь",
             )
+            telephone_card = fields_dict.get(
+                settings.USER_FORM_FIELDS["telephone"],
+                telephone,
+            )
+            tg_account_card = fields_dict.get(
+                settings.USER_FORM_FIELDS["tg_account"],
+                tg_account or "Не указан",
+            )
+            appeal_fields_reg: list[dict[str, Any]] = [
+                {"id": settings.REQUEST_FORM_FIELDS["fio"], "value": fullname},
+                {"id": settings.REQUEST_FORM_FIELDS["telephone"], "value": telephone_card},
+                {
+                    "id": settings.REQUEST_FORM_FIELDS["normalized_telephone"],
+                    "value": normalized_phone,
+                },
+                {"id": settings.REQUEST_FORM_FIELDS["tg_account"], "value": tg_account_card},
+                {"id": settings.REQUEST_FORM_FIELDS["tg_id"], "value": tg_id},
+            ]
+            appeal_fields_reg.extend(
+                extra_appeal_fields_from_client_card(
+                    fields_dict, source_channel="telegram"
+                )
+            )
+            created = await create_appeal_task(
+                {"form_id": settings.APPEAL_FORM_ID, "fields": appeal_fields_reg}
+            )
+            task_id = created.get("id")
+            if task_id:
+                await open_chats_after_appeal(
+                    task_id,
+                    source_channel="telegram",
+                    fields_dict=fields_dict,
+                )
+                await message.answer("✅ Регистрация завершена успешно!")
+                await state.clear()
+                return
+
+            await message.answer("❌ Ошибка при создании обращения. Попробуйте позже.")
             await state.clear()
             return
 
@@ -523,7 +569,7 @@ async def input_fullname_handler(message: Message, state: FSMContext):
 
     fullname = message.text.strip()
     tg_id = message.from_user.id
-    tg_account = message.from_user.username
+    tg_account = (message.from_user.username or "").strip() or "Не указан"
 
     await message.answer("⏳ Пожалуйста подождите. Идет регистрация...")
 
