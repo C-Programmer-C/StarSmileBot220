@@ -23,7 +23,7 @@ from resource_limits import (
 from utils import (
     build_payload,
     check_api_element,
-    client_telephone_from_fields,
+    client_normalized_telephone_from_fields,
     create_appeal_task,
     create_user_task,
     ensure_max_id_on_client_task,
@@ -32,6 +32,7 @@ from utils import (
     find_client_tasks_by_phone,
     get_unique_file_id,
     notify_operators_anomaly,
+    normalize_phone_for_lookup,
     open_chats_after_appeal,
     operator_warn_max_flow,
     post_crm_plain_comment,
@@ -366,23 +367,34 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
             return
 
         phone = str(text).strip()
+        normalized_phone = normalize_phone_for_lookup(phone)
 
         await event.message.answer("⏳ Проверяем ваш номер. Пожалуйста подождите…")
         lock = await get_user_lock(user_id)
         async with lock:
             await acquire_user_message_slot("max_messenger", user_id)
-            tel_fid = settings.USER_FORM_FIELDS["telephone"]
+            tel_fid = settings.USER_FORM_FIELDS["normalized_telephone"]
+            if not normalized_phone:
+                logger.info(
+                    "MAX phone login: invalid phone format for normalized lookup user_id=%s raw=%r",
+                    user_id,
+                    phone,
+                )
+                await context.update_data(telephone=phone)
+                await context.set_state(RegistrationState.input_fullname)
+                await event.message.answer("👤 Введите ваше полное имя:")
+                return
             matches = await find_client_tasks_by_phone(
                 settings.CLIENT_FORM_ID,
                 tel_fid,
-                phone,
+                normalized_phone,
             )
             if matches:
                 await warn_if_multiple_tasks_on_register(
                     settings.CLIENT_FORM_ID,
                     tel_fid,
-                    phone,
-                    kind="телефон (MAX, вход)",
+                    normalized_phone,
+                    kind="нормализованный телефон (MAX, вход)",
                     tasks=matches,
                 )
                 client = matches[0]
@@ -391,33 +403,35 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
                 if cid is not None:
                     await ensure_max_id_on_client_task(int(cid), user_id, card_fields)
 
-                tel_for_search = client_telephone_from_fields(card_fields)
-                appeal_phone_fid = settings.REQUEST_FORM_FIELDS["telephone"]
+                tel_for_search = (
+                    client_normalized_telephone_from_fields(card_fields)
+                    or normalized_phone
+                )
+                appeal_phone_fid = settings.REQUEST_FORM_FIELDS["normalized_telephone"]
                 appeals = await find_client_tasks_by_phone(
                     settings.APPEAL_FORM_ID,
                     appeal_phone_fid,
                     tel_for_search,
-                    phone,
                 )
                 if appeals:
                     await warn_if_multiple_tasks_on_register(
                         settings.APPEAL_FORM_ID,
                         appeal_phone_fid,
-                        tel_for_search or phone,
-                        kind="телефон (MAX, обращение при входе)",
+                        tel_for_search,
+                        kind="нормализованный телефон (MAX, обращение при входе)",
                         tasks=appeals,
                     )
                     await sync_appeal_max_id_for_max_phone_login(
                         appeals[0],
                         user_id,
                         card_fields,
-                        phone_label=tel_for_search or phone,
+                        phone_label=tel_for_search,
                     )
                 else:
                     logger.info(
-                        "MAX phone login: no appeal for client_id=%s phone=%r",
+                        "MAX phone login: no appeal for client_id=%s normalized_phone=%r",
                         cid,
-                        tel_for_search or phone,
+                        tel_for_search,
                     )
 
                 await event.message.answer(_MAX_AUTH_SUCCESS)

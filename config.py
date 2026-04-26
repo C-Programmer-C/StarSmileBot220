@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     REQUEST_FORM_FIELDS: Dict[str, int] = {
         "fio": 4,
         "telephone": 5,
+        "normalized_telephone": 26,
         "tg_account": 6,
         "tg_id": 7,
         "max_id": 25,
@@ -24,6 +25,7 @@ class Settings(BaseSettings):
         "telephone": 3,
         "max_id": 8,
         "tg_account": 4,
+        "normalized_telephone": 9,
         "tg_id": 5,
     }
 

@@ -17,15 +17,21 @@ from resource_limits import (
     telegram_attachment_units,
 )
 from utils import (
+    client_normalized_telephone_from_fields,
     check_api_element,
     create_appeal_task,
     create_user_task,
+    ensure_tg_id_on_appeal_task,
+    ensure_tg_id_on_client_task,
     extra_appeal_fields_from_client_card,
     fetch_form_register_tasks,
+    find_client_tasks_by_phone,
+    normalize_phone_for_lookup,
     notify_operators_anomaly,
     open_chats_after_appeal,
     operator_warn_telegram_flow,
     prepare_fields_to_dict,
+    warn_if_multiple_tasks_on_register,
 )
 
 logger = logging.getLogger(__name__)
@@ -375,22 +381,9 @@ async def register_callback_handler(
             "❌ Ошибка: не удалось получить сообщение. Попробуйте еще раз."
         )
         return
-    await callback_query.message.answer("📝 Пожалуйста, введите ваше полное имя:")
-    await state.set_state(RegistrationState.input_fullname)
-    await callback_query.answer()
-
-
-@start_router.message(RegistrationState.input_fullname)
-async def input_fullname_handler(message: Message, state: FSMContext):
-    if not message.text:
-        await message.answer(
-            "❌ Ошибка: не удалось получить ваше имя. Пожалуйста, введите повторно ваше полное имя:"
-        )
-        return
-    fullname = message.text.strip()
-    await state.update_data(fullname=fullname)
-    await message.answer("📝 Пожалуйста, введите ваш номер телефона:")
+    await callback_query.message.answer("📝 Пожалуйста, введите ваш номер телефона:")
     await state.set_state(RegistrationState.input_telephone)
+    await callback_query.answer()
 
 
 @start_router.message(RegistrationState.input_telephone)
@@ -406,19 +399,138 @@ async def input_telephone_handler(message: Message, state: FSMContext):
             "❌ Ошибка: не удалось получить информацию о пользователе. Попробуйте еще раз."
         )
         return
-    data = await state.get_data()
     telephone = message.text.strip()
-    fullname = data.get("fullname")
+    tg_id = message.from_user.id
+    normalized_phone = normalize_phone_for_lookup(telephone)
+    if not normalized_phone:
+        await message.answer("❌ Похоже, это не номер телефона. Введите номер еще раз.")
+        return
+
+    await message.answer("⏳ Проверяем ваш номер. Пожалуйста подождите...")
+
+    lock = await get_user_lock(tg_id)
+
+    async with lock:
+        await acquire_user_message_slot("telegram", tg_id)
+        tel_fid = settings.USER_FORM_FIELDS["normalized_telephone"]
+        matches = await find_client_tasks_by_phone(
+            settings.CLIENT_FORM_ID,
+            tel_fid,
+            normalized_phone,
+        )
+        if matches:
+            client = matches[0]
+            client_id = client.get("id")
+            fields_dict = prepare_fields_to_dict(client.get("fields") or [])
+            await operator_warn_telegram_flow(
+                tg_id,
+                fields_dict,
+            )
+            await warn_if_multiple_tasks_on_register(
+                settings.CLIENT_FORM_ID,
+                tel_fid,
+                normalized_phone,
+                kind="нормализованный телефон (Telegram, вход)",
+                tasks=matches,
+            )
+            if client_id is not None:
+                await ensure_tg_id_on_client_task(int(client_id), tg_id, fields_dict)
+
+            existing_task = await check_api_element(
+                tg_id,
+                settings.APPEAL_FORM_ID,
+                settings.REQUEST_FORM_FIELDS["tg_id"],
+            )
+            task_id = existing_task.get("id") if existing_task else None
+
+            if not task_id:
+                appeal_phone_fid = settings.REQUEST_FORM_FIELDS["normalized_telephone"]
+                search_phone = (
+                    client_normalized_telephone_from_fields(fields_dict)
+                    or normalized_phone
+                )
+                appeals = await find_client_tasks_by_phone(
+                    settings.APPEAL_FORM_ID,
+                    appeal_phone_fid,
+                    search_phone,
+                )
+                if appeals:
+                    await warn_if_multiple_tasks_on_register(
+                        settings.APPEAL_FORM_ID,
+                        appeal_phone_fid,
+                        search_phone,
+                        kind="нормализованный телефон (Telegram, обращение при входе)",
+                        tasks=appeals,
+                    )
+                    first_appeal = appeals[0]
+                    raw_task_id = first_appeal.get("id")
+                    if raw_task_id is not None:
+                        task_id = int(raw_task_id)
+                        appeal_fields = prepare_fields_to_dict(
+                            first_appeal.get("fields") or []
+                        )
+                        await ensure_tg_id_on_appeal_task(
+                            task_id,
+                            tg_id,
+                            appeal_fields,
+                            phone_label=search_phone,
+                        )
+
+            if task_id:
+                await open_chats_after_appeal(
+                    task_id,
+                    source_channel="telegram",
+                    fields_dict=fields_dict,
+                )
+                await message.answer("✅ Регистрация завершена успешно!")
+                await state.clear()
+                return
+
+            await message.answer(
+                "❌ Не нашли ваше обращение. Напишите, пожалуйста, в поддержку."
+            )
+            await state.clear()
+            return
+
+        await state.update_data(telephone=telephone, normalized_telephone=normalized_phone)
+        await message.answer("📝 Пожалуйста, введите ваше полное имя:")
+        await state.set_state(RegistrationState.input_fullname)
+        return
+
+
+@start_router.message(RegistrationState.input_fullname)
+async def input_fullname_handler(message: Message, state: FSMContext):
+    if not message.text:
+        await message.answer(
+            "❌ Ошибка: не удалось получить ваше имя. Пожалуйста, введите повторно ваше полное имя:"
+        )
+        return
+    if not message.from_user:
+        await message.answer(
+            "❌ Ошибка: не удалось получить информацию о пользователе. Попробуйте еще раз."
+        )
+        return
+
+    data = await state.get_data()
+    telephone = (data.get("telephone") or "").strip()
+    normalized_telephone = (data.get("normalized_telephone") or "").strip()
+    if not telephone:
+        await message.answer(
+            "❌ Сессия регистрации устарела. Нажмите «Зарегистрироваться» снова."
+        )
+        await state.clear()
+        return
+
+    fullname = message.text.strip()
     tg_id = message.from_user.id
     tg_account = message.from_user.username
 
     await message.answer("⏳ Пожалуйста подождите. Идет регистрация...")
 
     lock = await get_user_lock(tg_id)
-
     async with lock:
         pending_user_id = await get_pending_user_id(tg_id)
-        
+
         try:
             existing_user = await check_api_element(
                 tg_id, settings.CLIENT_FORM_ID, settings.USER_FORM_FIELDS["tg_id"]
@@ -487,6 +599,10 @@ async def input_telephone_handler(message: Message, state: FSMContext):
             "fields": [
                 {"id": settings.USER_FORM_FIELDS["fullname"], "value": fullname},
                 {"id": settings.USER_FORM_FIELDS["telephone"], "value": telephone},
+                {
+                    "id": settings.USER_FORM_FIELDS["normalized_telephone"],
+                    "value": normalized_telephone or normalize_phone_for_lookup(telephone) or "-",
+                },
                 {"id": settings.USER_FORM_FIELDS["tg_account"], "value": tg_account},
                 {"id": settings.USER_FORM_FIELDS["tg_id"], "value": tg_id},
             ],
@@ -588,6 +704,10 @@ async def input_telephone_handler(message: Message, state: FSMContext):
             appeal_fields_reg: list[dict[str, Any]] = [
                 {"id": settings.REQUEST_FORM_FIELDS["fio"], "value": fullname},
                 {"id": settings.REQUEST_FORM_FIELDS["telephone"], "value": telephone},
+                {
+                    "id": settings.REQUEST_FORM_FIELDS["normalized_telephone"],
+                    "value": normalized_telephone or normalize_phone_for_lookup(telephone) or "-",
+                },
                 {"id": settings.REQUEST_FORM_FIELDS["tg_account"], "value": tg_account},
                 {"id": settings.REQUEST_FORM_FIELDS["tg_id"], "value": tg_id},
             ]

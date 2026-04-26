@@ -516,6 +516,24 @@ def _digits_only(s: str) -> str:
     return "".join(c for c in s if c.isdigit())
 
 
+def normalize_phone_for_lookup(raw: Any) -> str | None:
+    s = _pyrus_field_scalar(raw)
+    if not s:
+        return None
+    digits = _digits_only(s)
+    if not digits:
+        return None
+    if len(digits) == 11 and digits.startswith("8"):
+        return "7" + digits[1:]
+    if len(digits) == 10 and digits.startswith("9"):
+        return "7" + digits
+    if len(digits) == 11 and digits.startswith("7"):
+        return digits
+    if digits.startswith("375") and len(digits) >= 10:
+        return digits
+    return None
+
+
 def phone_register_lookup_variants(raw: str) -> list[str]:
     """
     Варианты строк для запроса fld{{telephone}} к /forms/{{id}}/register.
@@ -639,9 +657,79 @@ async def ensure_max_id_on_client_task(
     )
 
 
+async def ensure_tg_id_on_client_task(
+    task_id: int,
+    tg_id: int,
+    fields_dict: dict[int, Any],
+) -> None:
+    fid = settings.USER_FORM_FIELDS["tg_id"]
+    cur = _pyrus_field_scalar(fields_dict.get(fid))
+    if cur is not None and str(cur).strip() == str(tg_id):
+        return
+    text = "Привязка Telegram к карточке клиента (бот)."
+    if cur is not None and str(cur).strip() and str(cur).strip() != str(tg_id):
+        logger.warning(
+            "ensure_tg_id_on_client_task: task %s tg_id %r -> %s",
+            task_id,
+            cur,
+            tg_id,
+        )
+        text = f"Обновлён tg_id при входе по телефону (было {cur}, стало {tg_id})."
+    await api_request(
+        "POST",
+        f"/tasks/{task_id}/comments",
+        json_data={
+            "text": text,
+            "field_updates": [{"id": fid, "value": tg_id}],
+        },
+    )
+
+
+async def ensure_tg_id_on_appeal_task(
+    task_id: int,
+    tg_id: int,
+    appeal_fields: dict[int, Any],
+    *,
+    phone_label: str,
+) -> None:
+    fid = settings.REQUEST_FORM_FIELDS["tg_id"]
+    cur = _pyrus_field_scalar(appeal_fields.get(fid))
+    if cur is not None and str(cur).strip() == str(tg_id):
+        return
+    text = (
+        f"[Бот Telegram] Привязан tg_id к обращению (тел. {phone_label}), поле tg_id заполнено."
+    )
+    if cur is not None and str(cur).strip() and str(cur).strip() != str(tg_id):
+        logger.warning(
+            "ensure_tg_id_on_appeal_task: task %s tg_id %r -> %s",
+            task_id,
+            cur,
+            tg_id,
+        )
+        text = (
+            f"[Бот Telegram] Обновлён tg_id в обращении (тел. {phone_label}): "
+            f"было {cur}, стало {tg_id}."
+        )
+    await api_request(
+        "POST",
+        f"/tasks/{task_id}/comments",
+        json_data={
+            "text": text,
+            "field_updates": [{"id": fid, "value": tg_id}],
+        },
+    )
+
+
 def client_telephone_from_fields(card_fields: dict[int, Any]) -> str:
     v = _pyrus_field_scalar(
         card_fields.get(settings.USER_FORM_FIELDS["telephone"])
+    )
+    return (v or "").strip()
+
+
+def client_normalized_telephone_from_fields(card_fields: dict[int, Any]) -> str:
+    v = _pyrus_field_scalar(
+        card_fields.get(settings.USER_FORM_FIELDS["normalized_telephone"])
     )
     return (v or "").strip()
 
