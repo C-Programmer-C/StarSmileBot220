@@ -403,9 +403,6 @@ async def input_telephone_handler(message: Message, state: FSMContext):
     tg_id = message.from_user.id
     tg_account = (message.from_user.username or "").strip() or "Не указан"
     normalized_phone = normalize_phone_for_lookup(telephone)
-    if not normalized_phone:
-        await message.answer("❌ Похоже, это не номер телефона. Введите номер еще раз.")
-        return
 
     await message.answer("⏳ Проверяем ваш номер. Пожалуйста подождите...")
 
@@ -413,6 +410,11 @@ async def input_telephone_handler(message: Message, state: FSMContext):
 
     async with lock:
         await acquire_user_message_slot("telegram", tg_id)
+        if not normalized_phone:
+            await state.update_data(telephone=telephone, normalized_telephone="")
+            await message.answer("📝 Пожалуйста, введите ваше полное имя:")
+            await state.set_state(RegistrationState.input_fullname)
+            return
         tel_fid = settings.USER_FORM_FIELDS["normalized_telephone"]
         matches = await find_client_tasks_by_phone(
             settings.CLIENT_FORM_ID,
