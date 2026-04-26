@@ -9,24 +9,24 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     SECURITY_KEY: str
     REQUEST_FORM_FIELDS: Dict[str, int] = {
-        "fio": 4,
-        "telephone": 5,
-        "normalized_telephone": 26,
-        "tg_account": 6,
-        "tg_id": 7,
-        "max_id": 25,
-        "theme": 8,
-        "email": 9,
-        "description": 10,
+        "fio": 26,
+        "telephone": 27,
+        "normalized_telephone": 47,
+        "tg_account": 28,
+        "tg_id": 29,
+        "max_id": 48,
+        "theme": 5,
+        "email": 11,
+        "description": 8,
     }
 
     USER_FORM_FIELDS: Dict[str, int] = {
-        "fullname": 2,
-        "telephone": 3,
-        "max_id": 8,
-        "tg_account": 4,
-        "normalized_telephone": 9,
-        "tg_id": 5,
+        "fullname": 6,
+        "telephone": 7,
+        "max_id": 15,
+        "tg_account": 8,
+        "normalized_telephone": 14,
+        "tg_id": 9,
     }
 
     LOGIN: str
