@@ -726,8 +726,6 @@ async def input_fullname_handler(message: Message, state: FSMContext):
             f"User {fullname} successfully registered with TG ID {tg_id} and Task ID {user_id}"
         )
 
-        await message.answer(f"✅ Регистрация завершена успешно!\n\nСпасибо за регистрацию, {fullname}!")
-
         pending_task_id = await get_pending_task_id(tg_id)
         
         existing_task = await check_api_element(
@@ -836,5 +834,8 @@ async def input_fullname_handler(message: Message, state: FSMContext):
             )
             logger.info(f"The chat(s) for task #{task_id} have been successfully opened")
             await operator_warn_telegram_flow(tg_id, card_fields)
+            await message.answer(
+                f"✅ Регистрация завершена успешно!\n\nСпасибо за регистрацию, {fullname}!"
+            )
 
     await state.clear()

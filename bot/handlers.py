@@ -517,8 +517,6 @@ async def input_telephone_handler(message: Message, state: FSMContext):
             f"User {fullname} successfully registered with TG ID {tg_id} and Task ID {user_id}"
         )
 
-        await message.answer(f"✅ Регистрация завершена успешно!\n\nСпасибо за регистрацию, {fullname}!")
-
         pending_task_id = await get_pending_task_id(tg_id)
         
         existing_task = await check_api_element(
@@ -624,5 +622,8 @@ async def input_telephone_handler(message: Message, state: FSMContext):
                     f"Конфликт карточек клиента по tg_id={tg_id}: только что создана карточка {created_user_id}, в реестре уже есть карточка {conflict_found_user_id}. Используется карточка {conflict_found_user_id}.",
                     log_event="client_card_conflict_reg",
                 )
+            await message.answer(
+                f"✅ Регистрация завершена успешно!\n\nСпасибо за регистрацию, {fullname}!"
+            )
 
     await state.clear()
