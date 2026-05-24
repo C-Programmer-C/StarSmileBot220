@@ -83,9 +83,22 @@ class RegistrationState(StatesGroup):
     input_telephone = State()
 
 
+NEW_REG_SUCCESS = (
+    "Здравствуйте!\n"
+    "Вы в официальном чате поддержки Star Smile. Здесь мы отвечаем на вопросы, помогаем с заказами и решаем любые рабочие ситуации.\n"
+    "Обратите внимание: в чате доступны привычные кнопки для быстрого заказа сервисов — например, допечаток или вызова курьера.\n\n"
+    "Эти же функции доступны в нашем мобильном приложении.\n\n"
+    "AppStore\n"
+    "https://apps.apple.com/ru/app/%D1%81%D1%82%D0%B0%D1%80-%D1%81%D0%BC%D0%B0%D0%B9%D0%BB-%D0%B4%D0%BE%D0%BA%D1%82%D0%BE%D1%80/id1570657072\n\n"
+    "Google PlayMarket\n"
+    "https://play.google.com/store/apps/details?id=ru.starsmile.doctor\n\n"
+    "Здесь мы всегда на связи для любых вопросов. Спрашивайте — поможем."
+)
+
+
 @start_router.message(StateFilter(None))
 async def message_text_handler(message: Message):
-    
+
     if not message.from_user:
         message.answer(
             "❌ Ошибка: не удалось получить информацию о пользователе. Попробуйте еще раз."
@@ -107,7 +120,7 @@ async def message_text_handler(message: Message):
             user = await check_api_element(
                 tg_id, settings.CLIENT_FORM_ID, settings.USER_FORM_FIELDS["tg_id"]
             )
-        
+
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 403:
                 logger.warning(f"Access denied for user {tg_id}: {e}")
@@ -156,7 +169,7 @@ async def message_text_handler(message: Message):
             return
 
         pending_task_id = await get_pending_task_id(tg_id)
-        
+
         task = await check_api_element(
             tg_id, settings.APPEAL_FORM_ID, settings.REQUEST_FORM_FIELDS["tg_id"]
         )
@@ -165,9 +178,7 @@ async def message_text_handler(message: Message):
 
         if not task_id and pending_task_id:
             task_id = pending_task_id
-            logger.info(
-                f"Using pending task ID {task_id} from cache for user {tg_id}"
-            )
+            logger.info(f"Using pending task ID {task_id} from cache for user {tg_id}")
 
         logger.info(
             f"Processing message from user {tg_id}, existing appeal task ID: {task_id}"
@@ -185,7 +196,9 @@ async def message_text_handler(message: Message):
                 )
             else:
                 task = await check_api_element(
-                    tg_id, settings.APPEAL_FORM_ID, settings.REQUEST_FORM_FIELDS["tg_id"]
+                    tg_id,
+                    settings.APPEAL_FORM_ID,
+                    settings.REQUEST_FORM_FIELDS["tg_id"],
                 )
 
                 task_id = task.get("id") if task else None
@@ -265,7 +278,9 @@ async def message_text_handler(message: Message):
                     await asyncio.sleep(0.2 * (attempt + 1))
 
                     task = await check_api_element(
-                        tg_id, settings.APPEAL_FORM_ID, settings.REQUEST_FORM_FIELDS["tg_id"]
+                        tg_id,
+                        settings.APPEAL_FORM_ID,
+                        settings.REQUEST_FORM_FIELDS["tg_id"],
                     )
 
                     found_task_id = task.get("id") if task else None
@@ -299,9 +314,11 @@ async def message_text_handler(message: Message):
                 )
 
                 task = await check_api_element(
-                    tg_id, settings.APPEAL_FORM_ID, settings.REQUEST_FORM_FIELDS["tg_id"]
+                    tg_id,
+                    settings.APPEAL_FORM_ID,
+                    settings.REQUEST_FORM_FIELDS["tg_id"],
                 )
-                
+
                 if task and task.get("id"):
                     await clear_pending_task_id(tg_id)
 
@@ -378,7 +395,7 @@ async def input_telephone_handler(message: Message, state: FSMContext):
 
     async with lock:
         pending_user_id = await get_pending_user_id(tg_id)
-        
+
         try:
             existing_user = await check_api_element(
                 tg_id, settings.CLIENT_FORM_ID, settings.USER_FORM_FIELDS["tg_id"]
@@ -406,9 +423,7 @@ async def input_telephone_handler(message: Message, state: FSMContext):
 
         if not user_id and pending_user_id:
             user_id = pending_user_id
-            logger.info(
-                f"Using pending user ID {user_id} from cache for user {tg_id}"
-            )
+            logger.info(f"Using pending user ID {user_id} from cache for user {tg_id}")
 
         if user_id:
             logger.warning(
@@ -509,7 +524,7 @@ async def input_telephone_handler(message: Message, state: FSMContext):
         existing_user = await check_api_element(
             tg_id, settings.CLIENT_FORM_ID, settings.USER_FORM_FIELDS["tg_id"]
         )
-        
+
         if existing_user and existing_user.get("id"):
             await clear_pending_user_id(tg_id)
 
@@ -518,7 +533,7 @@ async def input_telephone_handler(message: Message, state: FSMContext):
         )
 
         pending_task_id = await get_pending_task_id(tg_id)
-        
+
         existing_task = await check_api_element(
             tg_id, settings.APPEAL_FORM_ID, settings.REQUEST_FORM_FIELDS["tg_id"]
         )
@@ -559,7 +574,9 @@ async def input_telephone_handler(message: Message, state: FSMContext):
             created_task_id = result.get("id")
 
             if result and created_task_id:
-                logger.info(f"Created new appeal task ID {created_task_id} for user {tg_id}")
+                logger.info(
+                    f"Created new appeal task ID {created_task_id} for user {tg_id}"
+                )
                 await set_pending_task_id(tg_id, created_task_id)
 
                 task_id = created_task_id
@@ -569,7 +586,9 @@ async def input_telephone_handler(message: Message, state: FSMContext):
                     await asyncio.sleep(0.2 * (attempt + 1))
 
                     existing_task = await check_api_element(
-                        tg_id, settings.APPEAL_FORM_ID, settings.REQUEST_FORM_FIELDS["tg_id"]
+                        tg_id,
+                        settings.APPEAL_FORM_ID,
+                        settings.REQUEST_FORM_FIELDS["tg_id"],
                     )
 
                     found_task_id = existing_task.get("id") if existing_task else None
@@ -592,11 +611,13 @@ async def input_telephone_handler(message: Message, state: FSMContext):
                     logger.info(
                         f"Task {created_task_id} not found in API after {max_retries} attempts. Using created task ID from cache."
                     )
-                    
+
                 existing_task = await check_api_element(
-                    tg_id, settings.APPEAL_FORM_ID, settings.REQUEST_FORM_FIELDS["tg_id"]
+                    tg_id,
+                    settings.APPEAL_FORM_ID,
+                    settings.REQUEST_FORM_FIELDS["tg_id"],
                 )
-                
+
                 if existing_task and existing_task.get("id"):
                     await clear_pending_task_id(tg_id)
 
@@ -614,7 +635,9 @@ async def input_telephone_handler(message: Message, state: FSMContext):
                 source_channel="telegram",
                 fields_dict=card_fields,
             )
-            logger.info(f"The chat(s) for task #{task_id} have been successfully opened")
+            logger.info(
+                f"The chat(s) for task #{task_id} have been successfully opened"
+            )
             await operator_warn_telegram_flow(tg_id, card_fields)
             if user_registry_conflict and conflict_found_user_id is not None:
                 await notify_operators_anomaly(
@@ -622,8 +645,6 @@ async def input_telephone_handler(message: Message, state: FSMContext):
                     f"Конфликт карточек клиента по tg_id={tg_id}: только что создана карточка {created_user_id}, в реестре уже есть карточка {conflict_found_user_id}. Используется карточка {conflict_found_user_id}.",
                     log_event="client_card_conflict_reg",
                 )
-            await message.answer(
-                f"✅ Регистрация завершена успешно!\n\nСпасибо за регистрацию, {fullname}!"
-            )
+            await message.answer(NEW_REG_SUCCESS)
 
     await state.clear()

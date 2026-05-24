@@ -67,7 +67,17 @@ class RegistrationState(StatesGroup):
 
 _MAX_PHONE_PROMPT = "📱 Укажите номер телефона — мы проверим, есть ли вы в системе."
 
-_MAX_AUTH_SUCCESS = "✅ Вы успешно авторизованы. Добро пожаловать!"
+_MAX_AUTH_SUCCESS = (
+    "Здравствуйте!\n"
+    "Вы в официальном чате поддержки Star Smile. Здесь мы отвечаем на вопросы, помогаем с заказами и решаем любые рабочие ситуации.\n"
+    "Обратите внимание: в чате доступны привычные кнопки для быстрого заказа сервисов — например, допечаток или вызова курьера.\n\n"
+    "Эти же функции доступны в нашем мобильном приложении.\n\n"
+    "AppStore\n"
+    "https://apps.apple.com/ru/app/%D1%81%D1%82%D0%B0%D1%80-%D1%81%D0%BC%D0%B0%D0%B9%D0%BB-%D0%B4%D0%BE%D0%BA%D1%82%D0%BE%D1%80/id1570657072\n\n"
+    "Google PlayMarket\n"
+    "https://play.google.com/store/apps/details?id=ru.starsmile.doctor\n\n"
+    "Здесь мы всегда на связи для любых вопросов. Спрашивайте — поможем."
+)
 
 
 def _registration_markup():
@@ -262,12 +272,16 @@ async def _process_one_max_attachment_to_pyrus(
         candidate_urls.append(url)
     if token:
         candidate_urls.append(f"https://platform-api.max.ru/files/{token}")
-        candidate_urls.append(f"https://platform-api.max.ru/files/{token}?download=true")
+        candidate_urls.append(
+            f"https://platform-api.max.ru/files/{token}?download=true"
+        )
         candidate_urls.append(f"https://platform-api.max.ru/uploads/{token}")
     data: bytes | None = None
     content_type: str | None = None
     for u in candidate_urls:
-        data, content_type = await _download_max_attachment_to_bytes(client, u, headers=headers)
+        data, content_type = await _download_max_attachment_to_bytes(
+            client, u, headers=headers
+        )
         if data:
             break
     if not data:
@@ -289,7 +303,9 @@ async def _process_one_max_attachment_to_pyrus(
     return []
 
 
-async def _download_and_upload_attachments_to_pyrus(attachments: list[Any]) -> list[str]:
+async def _download_and_upload_attachments_to_pyrus(
+    attachments: list[Any],
+) -> list[str]:
     if not attachments:
         return []
     max_token = settings.MAX_BOT_TOKEN or settings.BOT_TOKEN
@@ -300,7 +316,9 @@ async def _download_and_upload_attachments_to_pyrus(attachments: list[Any]) -> l
 
         async def one(att: Any) -> list[str]:
             async with sem:
-                return await _process_one_max_attachment_to_pyrus(client, att, headers=headers)
+                return await _process_one_max_attachment_to_pyrus(
+                    client, att, headers=headers
+                )
 
         results = await asyncio.gather(
             *[one(a) for a in attachments],
@@ -363,7 +381,9 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
         if not user_id or not chat_id:
             return
         if not text or not str(text).strip():
-            await event.message.answer("❌ Номер не может быть пустым. Отправьте номер телефона.")
+            await event.message.answer(
+                "❌ Номер не может быть пустым. Отправьте номер телефона."
+            )
             return
 
         phone = str(text).strip()
@@ -478,8 +498,14 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
                 json_data: dict[str, Any] = {
                     "form_id": settings.CLIENT_FORM_ID,
                     "fields": [
-                        {"id": settings.USER_FORM_FIELDS["fullname"], "value": fullname},
-                        {"id": settings.USER_FORM_FIELDS["telephone"], "value": telephone},
+                        {
+                            "id": settings.USER_FORM_FIELDS["fullname"],
+                            "value": fullname,
+                        },
+                        {
+                            "id": settings.USER_FORM_FIELDS["telephone"],
+                            "value": telephone,
+                        },
                         {"id": settings.USER_FORM_FIELDS["max_id"], "value": user_id},
                     ],
                 }
@@ -506,7 +532,10 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
             if not task_id:
                 appeal_fields: list[dict[str, Any]] = [
                     {"id": settings.REQUEST_FORM_FIELDS["fio"], "value": fullname},
-                    {"id": settings.REQUEST_FORM_FIELDS["telephone"], "value": telephone},
+                    {
+                        "id": settings.REQUEST_FORM_FIELDS["telephone"],
+                        "value": telephone,
+                    },
                     {"id": appeal_user_field, "value": user_id},
                 ]
                 appeal_fields.extend(
@@ -528,9 +557,7 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
                     fields_dict=card_fields,
                 )
                 await operator_warn_max_flow(user_id, card_fields)
-                await event.message.answer(
-                    f"✅ Регистрация завершена успешно!\n\nСпасибо за регистрацию, {fullname}!",
-                )
+                await event.message.answer(_MAX_AUTH_SUCCESS)
             else:
                 await event.message.answer("❌ Ошибка при создании обращения.")
                 await context.clear()
@@ -580,14 +607,22 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
             )
             if isinstance(ut_res, BaseException):
                 if isinstance(ut_res, httpx.HTTPStatusError):
-                    logger.error("HTTP error (client register) for user %s: %s", user_id, ut_res)
-                    await event.message.answer("❌ Ошибка при обработке запроса. Попробуйте позже.")
+                    logger.error(
+                        "HTTP error (client register) for user %s: %s", user_id, ut_res
+                    )
+                    await event.message.answer(
+                        "❌ Ошибка при обработке запроса. Попробуйте позже."
+                    )
                     return
                 raise ut_res
             if isinstance(ap_res, BaseException):
                 if isinstance(ap_res, httpx.HTTPStatusError):
-                    logger.error("HTTP error (appeal register) for user %s: %s", user_id, ap_res)
-                    await event.message.answer("❌ Ошибка при обработке запроса. Попробуйте позже.")
+                    logger.error(
+                        "HTTP error (appeal register) for user %s: %s", user_id, ap_res
+                    )
+                    await event.message.answer(
+                        "❌ Ошибка при обработке запроса. Попробуйте позже."
+                    )
                     return
                 raise ap_res
 
@@ -614,8 +649,12 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
                 )
                 return
             fields_dict = prepare_fields_to_dict(fields)
-            fullname = fields_dict.get(settings.USER_FORM_FIELDS["fullname"], "Пользователь")
-            telephone = fields_dict.get(settings.USER_FORM_FIELDS["telephone"], "Не указан")
+            fullname = fields_dict.get(
+                settings.USER_FORM_FIELDS["fullname"], "Пользователь"
+            )
+            telephone = fields_dict.get(
+                settings.USER_FORM_FIELDS["telephone"], "Не указан"
+            )
 
             existing_task = appeal_tasks[0] if appeal_tasks else None
             task_id = existing_task.get("id") if existing_task else None
@@ -667,7 +706,9 @@ def register_max_handlers(dp: Dispatcher, bot: Bot) -> None:
             try:
                 await send_comment_in_pyrus(task_id, payload)
             except Exception as e:
-                logger.exception("send_comment_in_pyrus failed task_id=%s: %s", task_id, e)
+                logger.exception(
+                    "send_comment_in_pyrus failed task_id=%s: %s", task_id, e
+                )
                 record_messaging_failure(
                     direction="user_to_crm",
                     task_id=task_id,
